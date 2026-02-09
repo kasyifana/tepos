@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OEE Dashboard - Ice Plant Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div class="header">
+      <h1>OEE</h1>
+      <div class="header-controls">
+        <div class="date-inputs">
+          <input type="date" id="startDate" />
+          <input type="date" id="endDate" />
+        </div>
+        <button class="tab-button active">OEE overview</button>
+        <button class="tab-button">Error analysis</button>
+        <button class="tab-button">Analysis of sub assets</button>
+        <button class="tab-button">•••</button>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <!-- Left Column: OEE Metrics -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">OEE</span>
+          <a class="details-link">Details →</a>
+        </div>
+
+        <div class="gauge-grid">
+          <div class="gauge-container">
+            <div class="gauge-label">OEE</div>
+            <div class="gauge-wrapper">
+              <canvas id="gaugeOEE"></canvas>
+            </div>
+            <div class="gauge-value" id="valOEE">0%</div>
+            <div class="chart-container">
+              <canvas id="trendOEE"></canvas>
+            </div>
+            <div class="gauge-subtitle" id="subOEE">0%</div>
+          </div>
+
+          <div class="gauge-container">
+            <div class="gauge-label">Availability</div>
+            <div class="gauge-wrapper">
+              <canvas id="gaugeAvail"></canvas>
+            </div>
+            <div class="gauge-value" id="valAvail">0%</div>
+            <div class="chart-container">
+              <canvas id="trendAvail"></canvas>
+            </div>
+            <div class="gauge-subtitle" id="subAvail">0%</div>
+          </div>
+
+          <div class="gauge-container">
+            <div class="gauge-label">Performance</div>
+            <div class="gauge-wrapper">
+              <canvas id="gaugePerf"></canvas>
+            </div>
+            <div class="gauge-value" id="valPerf">0%</div>
+            <div class="chart-container">
+              <canvas id="trendPerf"></canvas>
+            </div>
+            <div class="gauge-subtitle" id="subPerf">0%</div>
+          </div>
+
+          <div class="gauge-container">
+            <div class="gauge-label">Quality</div>
+            <div class="gauge-wrapper">
+              <canvas id="gaugeQual"></canvas>
+            </div>
+            <div class="gauge-value" id="valQual">0%</div>
+            <div class="chart-container">
+              <canvas id="trendQual"></canvas>
+            </div>
+            <div class="gauge-subtitle" id="subQual">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Other KPIs -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Other KPIs</span>
+          <span style="font-size: 12px; color: var(--text-gray)"
+            >Key Performance Indicators</span
+          >
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-item">
+            <div class="kpi-label">Total Production</div>
+            <div class="kpi-value" id="totalProdVal">0</div>
+            <div class="kpi-change" id="totalProdChange">Es Keluar</div>
+          </div>
+
+          <div class="kpi-item">
+            <div class="kpi-label">Total Defects</div>
+            <div class="kpi-value" id="totalDefectVal">0</div>
+            <div class="kpi-change" id="totalDefectChange">Bak 1 + Bak 2</div>
+          </div>
+
+          <div class="kpi-item">
+            <div class="kpi-label">Avg Productivity</div>
+            <div class="kpi-value" id="avgProdVal">0</div>
+            <div class="kpi-change" id="avgProdChange">bal/jam</div>
+          </div>
+
+          <div class="kpi-item">
+            <div class="kpi-label">Workforce Efficiency</div>
+            <div class="kpi-value" id="workforceVal">0</div>
+            <div class="kpi-change" id="workforceChange">bal/worker</div>
+          </div>
+
+          <div class="kpi-item">
+            <div class="kpi-label">Unsold Ice</div>
+            <div class="kpi-value" id="unsoldVal">0</div>
+            <div class="kpi-change" id="unsoldChange">bal</div>
+          </div>
+
+          <div class="kpi-item">
+            <div class="kpi-label">Sales Rate</div>
+            <div class="kpi-value" id="salesRateVal">0%</div>
+            <div class="kpi-change" id="salesRateChange">
+              Persentase Penjualan
+            </div>
+          </div>
+
+          <div class="kpi-item">
+            <div class="kpi-label">Order Fulfillment</div>
+            <div class="kpi-value" id="orderFulfillVal">0</div>
+            <div class="kpi-change" id="orderFulfillChange" class="negative">
+              gap
+            </div>
+          </div>
+
+          <div class="kpi-item">
+            <div class="kpi-label">Peak Load Hours</div>
+            <div class="kpi-value" id="peakLoadVal">0</div>
+            <div class="kpi-change" id="peakLoadChange">hours</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline Section -->
+    <div class="timeline-container">
+      <div class="timeline-header">
+        <span class="card-title">Machine status for current data</span>
+        <div class="timeline-legend">
+          <div class="legend-item">
+            <div class="legend-color" style="background: #10b981"></div>
+            <span>Running (Normal Load)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #fcd34d"></div>
+            <span>Peak Power Load</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #fb923c"></div>
+            <span>Tank 1 Defects</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #ef4444"></div>
+            <span>Tank 2 Defects</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #93c5fd"></div>
+            <span>Machine Idle</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="timelineViz"></div>
+
+      <div class="distribution-panel">
+        <div class="distribution-title">Distribution</div>
+        <div class="distribution-item">
+          <div class="dist-label">
+            <div class="legend-color" style="background: #10b981"></div>
+            <span>Running (Normal Load)</span>
+          </div>
+          <div>
+            <span class="dist-time" id="distNormal">0 hrs</span>
+            <span class="dist-count" id="distNormalCount">0 days</span>
+          </div>
+        </div>
+        <div class="distribution-item">
+          <div class="dist-label">
+            <div class="legend-color" style="background: #fcd34d"></div>
+            <span>Peak Power Load</span>
+          </div>
+          <div>
+            <span class="dist-time" id="distPeak">0 hrs</span>
+            <span class="dist-count" id="distPeakCount">0 days</span>
+          </div>
+        </div>
+        <div class="distribution-item">
+          <div class="dist-label">
+            <div class="legend-color" style="background: #fb923c"></div>
+            <span>Tank 1 Defects</span>
+          </div>
+          <div>
+            <span class="dist-time" id="distBak1">0 units</span>
+            <span class="dist-count" id="distBak1Count">0 days</span>
+          </div>
+        </div>
+        <div class="distribution-item">
+          <div class="dist-label">
+            <div class="legend-color" style="background: #ef4444"></div>
+            <span>Tank 2 Defects</span>
+          </div>
+          <div>
+            <span class="dist-time" id="distBak2">0 units</span>
+            <span class="dist-count" id="distBak2Count">0 days</span>
+          </div>
+        </div>
+        <div class="distribution-item">
+          <div class="dist-label">
+            <div class="legend-color" style="background: #93c5fd"></div>
+            <span>Machine Idle</span>
+          </div>
+          <div>
+            <span class="dist-time" id="distIdle">0 hrs</span>
+            <span class="dist-count" id="distIdleCount">0 days</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
