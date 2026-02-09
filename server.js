@@ -21,8 +21,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Setup multer untuk upload CSV dan Excel
+// Untuk Vercel: gunakan /tmp directory karena serverless
 const upload = multer({ 
-  dest: 'uploads/',
+  dest: '/tmp/uploads/',
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
     const allowedExtensions = ['.csv', '.xls', '.xlsx'];
@@ -98,13 +99,17 @@ app.post('/api/upload-csv', upload.single('csvFile'), (req, res) => {
 
   // Function to save data
   const saveData = (data) => {
-    // Update current data
+    // Update current data in memory
     currentData = data;
     
-    // Save to file
-    const dataFilePath = path.join(__dirname, 'data', 'oee-data.js');
-    const dataContent = `// Data OEE - Auto-generated from file upload\n// Last updated: ${new Date().toISOString()}\n\nconst rawDataOriginal = ${JSON.stringify(data, null, 2)};\n\nmodule.exports = rawDataOriginal;\n`;
-    fs.writeFileSync(dataFilePath, dataContent);
+    // Try to save to file (will work locally, may not work on Vercel)
+    try {
+      const dataFilePath = path.join(__dirname, 'data', 'oee-data.js');
+      const dataContent = `// Data OEE - Auto-generated from file upload\n// Last updated: ${new Date().toISOString()}\n\nconst rawDataOriginal = ${JSON.stringify(data, null, 2)};\n\nmodule.exports = rawDataOriginal;\n`;
+      fs.writeFileSync(dataFilePath, dataContent);
+    } catch (error) {
+      console.warn('Cannot write to file system (normal on serverless):', error.message);
+    }
     
     res.json({ 
       success: true, 
@@ -253,9 +258,14 @@ app.post('/api/reset-data', (req, res) => {
   });
 });
 
-// Ensure uploads directory exists
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
+// Ensure uploads directory exists (for local development)
+const uploadsDir = process.env.VERCEL ? '/tmp/uploads' : 'uploads';
+if (!fs.existsSync(uploadsDir)) {
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (error) {
+    console.warn('Cannot create uploads directory:', error.message);
+  }
 }
 
 // Error handling
@@ -272,4 +282,8 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📊 OEE Dashboard - Ice Plant Monitoring`);
   console.log(`📁 CSV & Excel Import feature enabled`);
+  console.log(`🌍 Environment: ${process.env.VERCEL ? 'Vercel (Serverless)' : 'Local'}`);
 });
+
+// Export untuk Vercel serverless
+module.exports = app;
