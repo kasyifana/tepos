@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { downloadTemplate } from '../services/api';
 import './Header.css';
 
 function Header({ onDateChange, onImportClick }) {
