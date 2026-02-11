@@ -16,11 +16,29 @@ function MetricsCard({ data }) {
     if (!data || data.length === 0) return null;
 
     const totals = data.reduce((acc, row) => {
-      acc.plannedTime += parseFloat(row['Waktu Operasi (Jam)'] || 0);
-      acc.actualTime += parseFloat(row['Waktu Aktual Produksi (Jam)'] || 0);
-      acc.idealProd += parseFloat(row['Produksi Ideal (Bal)'] || 0);
-      acc.actualProd += parseFloat(row['Es Keluar (Bal)'] || 0);
-      acc.goodProd += (parseFloat(row['Es Keluar (Bal)'] || 0) - parseFloat(row['Defect Bak 1 (Bal)'] || 0) - parseFloat(row['Defect Bak 2 (Bal)'] || 0));
+      const waktuOperasi = parseFloat(row['Waktu Operasi (Jam)'] || 0);
+      const downtime = parseFloat(row['Downtime (Jam)'] || 0);
+      const kapasitasMesin = parseFloat(row['Kapasitas Mesin (Bal/Jam)'] || 120);
+      const esKeluar = parseFloat(row['Es Keluar (Bal)'] || 0);
+      const defect1 = parseFloat(row['Defect Bak 1 (Bal)'] || 0);
+      const defect2 = parseFloat(row['Defect Bak 2 (Bal)'] || 0);
+      const defect3 = parseFloat(row['Defect Bak 3 (Bal)'] || 0);
+      
+      // Waktu aktual produksi = Waktu Operasi - Downtime
+      const waktuAktual = waktuOperasi - downtime;
+      
+      // Produksi Ideal = Waktu Aktual × Kapasitas Mesin
+      const produksiIdeal = waktuAktual * kapasitasMesin;
+      
+      // Good Production = Total Es - All Defects
+      const goodProd = esKeluar - defect1 - defect2 - defect3;
+      
+      acc.plannedTime += waktuOperasi;
+      acc.actualTime += waktuAktual;
+      acc.idealProd += produksiIdeal;
+      acc.actualProd += esKeluar;
+      acc.goodProd += goodProd;
+      
       return acc;
     }, { plannedTime: 0, actualTime: 0, idealProd: 0, actualProd: 0, goodProd: 0 });
 

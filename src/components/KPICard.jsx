@@ -5,30 +5,46 @@ function KPICard({ data }) {
     if (!data || data.length === 0) return null;
 
     const totals = data.reduce((acc, row) => {
-      acc.totalProd += parseFloat(row['Es Keluar (Bal)'] || 0);
-      acc.totalDefects += parseFloat(row['Defect Bak 1 (Bal)'] || 0) + parseFloat(row['Defect Bak 2 (Bal)'] || 0);
-      acc.totalHours += parseFloat(row['Waktu Aktual Produksi (Jam)'] || 0);
-      acc.totalWorkers += parseFloat(row['Jumlah Pekerja'] || 0);
-      acc.unsold += parseFloat(row['Es Tidak Terjual (Bal)'] || 0);
-      acc.orders += parseFloat(row['Permintaan Es (Bal)'] || 0);
-      acc.peakHours += parseFloat(row['Jam Beban Puncak (Jam)'] || 0);
+      const esKeluar = parseFloat(row['Es Keluar (Bal)'] || 0);
+      const defect1 = parseFloat(row['Defect Bak 1 (Bal)'] || 0);
+      const defect2 = parseFloat(row['Defect Bak 2 (Bal)'] || 0);
+      const defect3 = parseFloat(row['Defect Bak 3 (Bal)'] || 0);
+      const waktuOperasi = parseFloat(row['Waktu Operasi (Jam)'] || 0);
+      const downtime = parseFloat(row['Downtime (Jam)'] || 0);
+      const waktuPersiapan = parseFloat(row['Waktu Persiapan (Jam)'] || 0);
+      const waktuIstirahat = parseFloat(row['Waktu Istirahat (Jam)'] || 0);
+      const waktuMaintenance = parseFloat(row['Waktu Maintenance (Jam)'] || 0);
+      
+      const waktuAktual = waktuOperasi - downtime;
+      const totalDefects = defect1 + defect2 + defect3;
+      
+      acc.totalProd += esKeluar;
+      acc.totalDefects += totalDefects;
+      acc.totalHours += waktuAktual;
+      acc.downtime += downtime;
+      acc.persiapan += waktuPersiapan;
+      acc.istirahat += waktuIstirahat;
+      acc.maintenance += waktuMaintenance;
+      acc.goodProd += (esKeluar - totalDefects);
+      
       return acc;
-    }, { totalProd: 0, totalDefects: 0, totalHours: 0, totalWorkers: 0, unsold: 0, orders: 0, peakHours: 0 });
+    }, { totalProd: 0, totalDefects: 0, totalHours: 0, downtime: 0, persiapan: 0, istirahat: 0, maintenance: 0, goodProd: 0 });
 
     const avgProd = totals.totalHours > 0 ? (totals.totalProd / totals.totalHours).toFixed(1) : 0;
-    const workforce = totals.totalWorkers > 0 ? (totals.totalProd / totals.totalWorkers).toFixed(1) : 0;
-    const salesRate = totals.totalProd > 0 ? (((totals.totalProd - totals.unsold) / totals.totalProd) * 100).toFixed(1) : 0;
-    const orderFulfill = totals.totalProd - totals.orders;
+    const defectRate = totals.totalProd > 0 ? ((totals.totalDefects / totals.totalProd) * 100).toFixed(1) : 0;
+    const goodRate = totals.totalProd > 0 ? ((totals.goodProd / totals.totalProd) * 100).toFixed(1) : 0;
+    const utilizationRate = (totals.totalHours + totals.downtime) > 0 ? 
+      ((totals.totalHours / (totals.totalHours + totals.downtime)) * 100).toFixed(1) : 0;
 
     return {
       totalProd: totals.totalProd.toFixed(0),
       totalDefects: totals.totalDefects.toFixed(0),
       avgProd,
-      workforce,
-      unsold: totals.unsold.toFixed(0),
-      salesRate,
-      orderFulfill: orderFulfill.toFixed(0),
-      peakHours: totals.peakHours.toFixed(1)
+      defectRate,
+      downtime: totals.downtime.toFixed(1),
+      goodRate,
+      persiapan: totals.persiapan.toFixed(1),
+      utilizationRate
     };
   };
 
@@ -46,13 +62,13 @@ function KPICard({ data }) {
         <div className="kpi-item">
           <div className="kpi-label">Total Production</div>
           <div className="kpi-value">{kpis.totalProd}</div>
-          <div className="kpi-change">Es Keluar</div>
+          <div className="kpi-change">Es Keluar (Bal)</div>
         </div>
 
         <div className="kpi-item">
           <div className="kpi-label">Total Defects</div>
           <div className="kpi-value">{kpis.totalDefects}</div>
-          <div className="kpi-change">Bak 1 + Bak 2</div>
+          <div className="kpi-change">All Defects (Bal)</div>
         </div>
 
         <div className="kpi-item">
@@ -62,33 +78,33 @@ function KPICard({ data }) {
         </div>
 
         <div className="kpi-item">
-          <div className="kpi-label">Workforce Efficiency</div>
-          <div className="kpi-value">{kpis.workforce}</div>
-          <div className="kpi-change">bal/worker</div>
+          <div className="kpi-label">Defect Rate</div>
+          <div className="kpi-value">{kpis.defectRate}%</div>
+          <div className="kpi-change">% dari Produksi</div>
         </div>
 
         <div className="kpi-item">
-          <div className="kpi-label">Unsold Ice</div>
-          <div className="kpi-value">{kpis.unsold}</div>
-          <div className="kpi-change">bal</div>
+          <div className="kpi-label">Total Downtime</div>
+          <div className="kpi-value">{kpis.downtime}</div>
+          <div className="kpi-change">Jam</div>
         </div>
 
         <div className="kpi-item">
-          <div className="kpi-label">Sales Rate</div>
-          <div className="kpi-value">{kpis.salesRate}%</div>
-          <div className="kpi-change">Persentase Penjualan</div>
+          <div className="kpi-label">Good Production</div>
+          <div className="kpi-value">{kpis.goodRate}%</div>
+          <div className="kpi-change">% Tanpa Defect</div>
         </div>
 
         <div className="kpi-item">
-          <div className="kpi-label">Order Fulfillment</div>
-          <div className="kpi-value">{kpis.orderFulfill}</div>
-          <div className={`kpi-change ${parseFloat(kpis.orderFulfill) < 0 ? 'negative' : 'positive'}`}>gap</div>
+          <div className="kpi-label">Setup Time</div>
+          <div className="kpi-value">{kpis.persiapan}</div>
+          <div className="kpi-change">Jam Persiapan</div>
         </div>
 
         <div className="kpi-item">
-          <div className="kpi-label">Peak Load Hours</div>
-          <div className="kpi-value">{kpis.peakHours}</div>
-          <div className="kpi-change">hours</div>
+          <div className="kpi-label">Utilization Rate</div>
+          <div className="kpi-value">{kpis.utilizationRate}%</div>
+          <div className="kpi-change">Operating Time</div>
         </div>
       </div>
     </div>
