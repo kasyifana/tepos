@@ -284,8 +284,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
 });
 
-app.use((req, res) => {
-  res.status(404).send('Page not found');
+// SPA fallback - semua route non-API serve index.html React
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
 });
 
 app.listen(PORT, () => {
