@@ -1,22 +1,46 @@
-// Parse CSV file client-side
+// Parse CSV file client-side with proper handling of quoted values
 export const parseCSV = (text) => {
   const lines = text.split('\n').filter(line => line.trim());
   if (lines.length < 2) return [];
 
-  const headers = lines[0].split(',').map(h => h.trim());
+  // Parse CSV line properly handling quotes
+  const parseLine = (line) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const headers = parseLine(lines[0]);
   const data = [];
 
+  console.log('CSV Headers:', headers); // Debug
+
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
+    const values = parseLine(lines[i]);
     const row = {};
     
     headers.forEach((header, index) => {
       const value = values[index];
-      // Convert numbers
-      if (value && !isNaN(value)) {
+      // Convert numbers, keep strings as is
+      if (value && value !== '' && !isNaN(value)) {
         row[header] = parseFloat(value);
       } else {
-        row[header] = value;
+        row[header] = value || '';
       }
     });
     
@@ -25,6 +49,7 @@ export const parseCSV = (text) => {
     }
   }
 
+  console.log('Parsed CSV data:', data); // Debug
   return data;
 };
 
@@ -35,25 +60,32 @@ export const parseExcel = async (file) => {
   throw new Error('Excel support coming soon. Please convert to CSV first.');
 };
 
-// Download data as CSV
+// Download data as CSV with proper escaping
 export const downloadCSV = (data) => {
   if (!data || data.length === 0) return;
 
   // Get headers from first row
   const headers = Object.keys(data[0]);
   
-  // Create CSV content
-  let csv = headers.join(',') + '\n';
+  // Escape CSV value (add quotes if contains comma, quote, or newline)
+  const escapeCSV = (value) => {
+    if (value === undefined || value === null) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+  
+  // Create CSV content with proper escaping
+  let csv = headers.map(escapeCSV).join(',') + '\n';
   data.forEach(row => {
-    const values = headers.map(header => {
-      const value = row[header];
-      return value !== undefined ? value : '';
-    });
+    const values = headers.map(header => escapeCSV(row[header]));
     csv += values.join(',') + '\n';
   });
 
   // Download
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
