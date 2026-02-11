@@ -1,7 +1,14 @@
 node_modules/
+dist/
 .env
 *.log
 .DS_Store
 temp_data.txt
 uploads/
 .vercel
+client/
+server.js
+data/
+api/
+views/
+public/
