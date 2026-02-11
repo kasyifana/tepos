@@ -31,7 +31,8 @@ function App() {
     }
 
     const filtered = data.filter(row => {
-      const rowDate = row['Tanggal'];
+      // Support both date formats
+      const rowDate = row.date || row['Tanggal'];
       if (!rowDate) return true;
 
       if (dateRange.start && rowDate < dateRange.start) return false;

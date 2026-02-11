@@ -8,22 +8,22 @@ Dashboard monitoring untuk Overall Equipment Effectiveness (OEE) pada pabrik es.
 - 📈 **Trend Analysis**: Visualisasi tren performa dengan grafik
 - 🔍 **KPI Monitoring**: Pantau berbagai Key Performance Indicators
 - 📅 **Date Filtering**: Filter data berdasarkan range tanggal
-- 📁 **CSV & Excel Import**: Import data dari file CSV atau Excel (.xlsx, .xls) - FITUR BARU!
+- 📁 **CSV & Excel Import**: Import data dari file CSV atau Excel (.xlsx, .xls)
 - 📥 **Template Download**: Download template CSV atau Excel untuk format yang benar
 - 🔄 **Reset Data**: Reset ke data default dengan satu klik
 - 🎨 **Modern UI**: Interface yang clean dengan design system yang konsisten
+- 💾 **localStorage**: Data tersimpan di browser (pure static site)
 
 ## Teknologi
 
-- **Backend**: Node.js + Express.js
-- **Frontend**: EJS Template Engine
-- **File Upload**: Multer
-- **CSV Parsing**: csv-parser
-- **Excel Processing**: xlsx
-- **Charts**: Chart.js
+- **Frontend**: React 18 + Vite 4
+- **State Management**: React Hooks (useState, useEffect)
+- **Charts**: Chart.js 4.4.0
+- **File Processing**: xlsx 0.18.5
 - **Styling**: Custom CSS dengan CSS Variables
+- **Deployment**: Vercel (Static Site)
 
-## Instalasi
+## Instalasi & Menjalankan
 
 1. Clone repository ini
 2. Install dependencies:
@@ -31,65 +31,64 @@ Dashboard monitoring untuk Overall Equipment Effectiveness (OEE) pada pabrik es.
 npm install
 ```
 
-3. Jalankan aplikasi:
-```bash
-npm start
-```
-
-Atau untuk development dengan auto-reload:
+3. Jalankan development server:
 ```bash
 npm run dev
 ```
 
 4. Buka browser dan akses:
 ```
-http://localhost:3000
+http://localhost:5173
+```
+
+5. Atau build untuk production:
+```bash
+npm run build
+npm run preview
 ```
 
 ## Struktur Folder
 
 ```
 tepos/
-├── data/
-│   └── oee-data.js          # Data OEE
-├── public/
-│   ├── css/
-│   │   └── style.css        # Stylesheet
-│   └── js/
-│       └── dashboard.js     # Client-side JavaScript
-├── views/
-│   └── index.ejs            # Template halaman utama
-├── server.js                # Server Express
+├── src/
+│   ├── components/
+│   │   ├── Header.jsx
+│   │   ├── MetricsCard.jsx
+│   │   ├── KPICard.jsx
+│   │   ├── Timeline.jsx
+│   │   └── UploadModal.jsx
+│   ├── data/
+│   │   └── oeeData.js
+│   ├── utils/
+│   │   └── fileUtils.js
+│   ├── styles/
+│   │   ├── App.css
+│   │   └── index.css
+│   ├── App.jsx
+│   └── main.jsx
+├── index.html
+├── vite.config.js
 ├── package.json
 └── README.md
 ```
 
-## API Endpoints
+## Data Format
 
-- `GET /` - Halaman dashboard utama
-- `GET /api/data` - Mendapatkan data OEE (support filtering dengan query params `startDate` dan `endDate`)
-- `POST /api/upload-csv` - Upload file CSV atau Excel untuk update data
-- `GET /api/download-template` - Download template (query param `format=csv` atau `format=xlsx`)
-- `POST /api/reset-data` - Reset data ke default
+### Format CSV/Excel (2 pilihan)
 
-## Import Data (CSV & Excel)
-
-### Format File
-
-Aplikasi mendukung **3 format file**:
-1. ✅ **CSV** (.csv)
-2. ✅ **Excel 2007+** (.xlsx) 
-3. ✅ **Excel 97-2003** (.xls)
-
-### Kolom yang Diperlukan
-
-File harus memiliki kolom-kolom berikut:
-
+**PILIHAN 1 - Format Lengkap (dari script.js):**
 ```csv
 date,esKeluar,bak1,bak2,totalRusak,realisasiOrder,normal,puncak,totalBeban,mesin,prodJam,kapasitas,tidakTerjual,persenPenjualan,order,selisihOrder,tenagaKerja,outputTK
 ```
 
-Atau di Excel dengan nama kolom yang sama di baris pertama (header).
+**PILIHAN 2 - Format Sederhana (Indonesian):**
+```csv
+Tanggal,Es Keluar (Bal),Defect Bak 1 (Bal),Defect Bak 2 (Bal),Defect Bak 3 (Bal),Waktu Operasi (Jam),Downtime (Jam),Kapasitas Mesin (Bal/Jam),Waktu Persiapan (Jam),Waktu Istirahat (Jam),Waktu Maintenance (Jam)
+```
+
+File `oee-sample-data-scriptjs.csv` menggunakan Format 1 (lengkap).
+File `oee-sample-data.csv` menggunakan Format 2 (sederhana).
 
 ### Cara Import
 
@@ -101,14 +100,25 @@ Atau di Excel dengan nama kolom yang sama di baris pertama (header).
 
 ### Download Template
 
-- **CSV Template**: Klik tombol **"📥 Template"** di header
-- **Excel Template**: Klik tombol **"📊 Download Excel Template"** di modal import
+Klik tombol **"📥 Download Template"** untuk mendapatkan file CSV dengan format yang benar.
 
-Template sudah berisi contoh data yang benar dan siap digunakan.
+## Metrics yang Ditampilkan
 
-### Reset Data
+### OEE Metrics (dari script.js formula)
+- **OEE (Overall Equipment Effectiveness)**: Availability × Performance × Quality
+- **Availability**: Total Beban / (Avg Mesin × 24 × Jumlah Hari)
+- **Performance**: Total Produksi / (Total Jam × Avg Prod/Jam)
+- **Quality**: (Total Produksi - Total Rusak) / Total Produksi
 
-Jika ingin kembali ke data default, klik tombol **"Reset ke Data Default"** di modal import.
+### KPIs (Key Performance Indicators)
+- **Total Production**: Total Es Keluar (Bal)
+- **Total Defects**: Defect Bak 1 + Bak 2 + Bak 3
+- **Avg Productivity**: Rata-rata bal/jam
+- **Defect Rate**: % defect dari produksi
+- **Total Downtime**: Total jam downtime
+- **Good Production**: % produk tanpa defect
+- **Setup Time**: Waktu persiapan (jam)
+- **Utilization Rate**: % waktu operasi
 
 ## Custom Styling
 
@@ -124,32 +134,14 @@ Aplikasi ini menggunakan CSS Variables untuk memudahkan kustomisasi warna:
 }
 ```
 
-## Metrics yang Ditampilkan
+## Deployment
 
-### OEE Metrics
-- **OEE (Overall Equipment Effectiveness)**: Availability × Performance × Quality
-- **Availability**: Persentase waktu mesin beroperasi
-- **Performance**: Persentase kecepatan produksi terhadap target
-- **Quality**: Persentase produk tanpa cacat
+Project ini di-deploy di Vercel sebagai static site:
 
-### KPIs
-- Total Production
-- Total Defects
-- Average Productivity
-- Workforce Efficiency
-- Unsold Ice
-- Sales Rate
-- Order Fulfillment
-- Peak Load Hours
-
-## Timeline Visualization
-
-Dashboard menampilkan timeline status mesin dengan kategori:
-- Running (Normal Load) - Hijau
-- Peak Power Load - Kuning
-- Tank 1 Defects - Orange
-- Tank 2 Defects - Merah
-- Machine Idle - Biru
+1. Push ke GitHub repository
+2. Connect ke Vercel
+3. Framework akan auto-detect sebagai Vite
+4. Setiap push ke `main` branch akan auto-deploy
 
 ## License
 

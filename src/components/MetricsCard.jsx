@@ -15,43 +15,34 @@ function MetricsCard({ data }) {
   const calculateMetrics = () => {
     if (!data || data.length === 0) return null;
 
-    const totals = data.reduce((acc, row) => {
-      const waktuOperasi = parseFloat(row['Waktu Operasi (Jam)'] || 0);
-      const downtime = parseFloat(row['Downtime (Jam)'] || 0);
-      const kapasitasMesin = parseFloat(row['Kapasitas Mesin (Bal/Jam)'] || 120);
-      const esKeluar = parseFloat(row['Es Keluar (Bal)'] || 0);
-      const defect1 = parseFloat(row['Defect Bak 1 (Bal)'] || 0);
-      const defect2 = parseFloat(row['Defect Bak 2 (Bal)'] || 0);
-      const defect3 = parseFloat(row['Defect Bak 3 (Bal)'] || 0);
-      
-      // Waktu aktual produksi = Waktu Operasi - Downtime
-      const waktuAktual = waktuOperasi - downtime;
-      
-      // Produksi Ideal = Waktu Aktual × Kapasitas Mesin
-      const produksiIdeal = waktuAktual * kapasitasMesin;
-      
-      // Good Production = Total Es - All Defects
-      const goodProd = esKeluar - defect1 - defect2 - defect3;
-      
-      acc.plannedTime += waktuOperasi;
-      acc.actualTime += waktuAktual;
-      acc.idealProd += produksiIdeal;
-      acc.actualProd += esKeluar;
-      acc.goodProd += goodProd;
-      
-      return acc;
-    }, { plannedTime: 0, actualTime: 0, idealProd: 0, actualProd: 0, goodProd: 0 });
+    let totalProduksi = 0, totalBak1 = 0, totalBak2 = 0, totalJam = 0;
+    let totalMesin = 0, totalProdJam = 0;
 
-    const availability = totals.plannedTime > 0 ? (totals.actualTime / totals.plannedTime) * 100 : 0;
-    const performance = totals.idealProd > 0 ? (totals.actualProd / totals.idealProd) * 100 : 0;
-    const quality = totals.actualProd > 0 ? (totals.goodProd / totals.actualProd) * 100 : 0;
-    const oee = (availability * performance * quality) / 10000;
+    data.forEach((row) => {
+      // Support both formats: script.js format and Indonesian format
+      totalProduksi += parseFloat(row.esKeluar || row['Es Keluar (Bal)'] || 0);
+      totalBak1 += parseFloat(row.bak1 || row['Defect Bak 1 (Bal)'] || 0);
+      totalBak2 += parseFloat(row.bak2 || row['Defect Bak 2 (Bal)'] || 0);
+      totalJam += parseFloat(row.totalBeban || row['Waktu Operasi (Jam)'] || 0);
+      totalMesin += parseFloat(row.mesin || 3); // default 3 mesin
+      totalProdJam += parseFloat(row.prodJam || row['Kapasitas Mesin (Bal/Jam)'] || 0);
+    });
+
+    const totalRusak = totalBak1 + totalBak2;
+    const avgMesin = totalMesin / data.length;
+    const avgProdJam = totalProdJam / data.length;
+
+    // Formula dari script.js
+    const availability = totalJam / (avgMesin * 24 * data.length);
+    const performance = totalProduksi / (totalJam * avgProdJam);
+    const quality = (totalProduksi - totalRusak) / totalProduksi;
+    const oee = availability * performance * quality;
 
     return {
-      oee: Math.min(oee, 100).toFixed(1),
-      availability: Math.min(availability, 100).toFixed(1),
-      performance: Math.min(performance, 100).toFixed(1),
-      quality: Math.min(quality, 100).toFixed(1)
+      oee: Math.min(oee * 100, 100).toFixed(1),
+      availability: Math.min(availability * 100, 100).toFixed(1),
+      performance: Math.min(performance * 100, 100).toFixed(1),
+      quality: Math.min(quality * 100, 100).toFixed(1)
     };
   };
 
