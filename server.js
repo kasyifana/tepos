@@ -8,12 +8,22 @@ const XLSX = require('xlsx');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Set EJS sebagai template engine
+// CORS untuk development (React dev server)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
+// Set EJS sebagai template engine (untuk backward compatibility)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Serve static files (JavaScript only, CSS is inline in EJS)
+// Serve static files
 app.use('/js', express.static(path.join(__dirname, 'public/js')));
+app.use(express.static(path.join(__dirname, 'client/dist')));
 
 // Middleware
 app.use(express.json());
@@ -55,7 +65,8 @@ app.get('/api/data', (req, res) => {
   
   if (startDate && endDate) {
     filteredData = currentData.filter(item => {
-      return item.date >= startDate && item.date <= endDate;
+      const itemDate = item['Tanggal'] || item.date || '';
+      return itemDate >= startDate && itemDate <= endDate;
     });
   }
   
@@ -75,24 +86,24 @@ app.post('/api/upload-csv', upload.single('csvFile'), (req, res) => {
   // Function to convert row to our data format
   const convertRowToFormat = (data) => {
     return {
-      date: data.date || data.Date || data.DATE,
-      esKeluar: Number(data.esKeluar || data['Es Keluar'] || 0),
-      bak1: Number(data.bak1 || data.Bak1 || data['Bak 1'] || 0),
-      bak2: Number(data.bak2 || data.Bak2 || data['Bak 2'] || 0),
-      totalRusak: Number(data.totalRusak || data['Total Rusak'] || 0),
-      realisasiOrder: Number(data.realisasiOrder || data['Realisasi Order'] || 0),
-      normal: Number(data.normal || data.Normal || 0),
-      puncak: Number(data.puncak || data.Puncak || 0),
-      totalBeban: Number(data.totalBeban || data['Total Beban'] || 0),
-      mesin: Number(data.mesin || data.Mesin || 0),
-      prodJam: Number(data.prodJam || data['Prod Jam'] || 0),
-      kapasitas: Number(data.kapasitas || data.Kapasitas || 0),
-      tidakTerjual: Number(data.tidakTerjual || data['Tidak Terjual'] || 0),
-      persenPenjualan: Number(data.persenPenjualan || data['Persen Penjualan'] || 0),
-      order: Number(data.order || data.Order || 0),
-      selisihOrder: Number(data.selisihOrder || data['Selisih Order'] || 0),
-      tenagaKerja: Number(data.tenagaKerja || data['Tenaga Kerja'] || 0),
-      outputTK: Number(data.outputTK || data['Output TK'] || 0),
+      'Tanggal': data['Tanggal'] || data.Tanggal || data.date || data.Date || '',
+      'Es Keluar (Bal)': Number(data['Es Keluar (Bal)'] || data.esKeluar || data['Es Keluar'] || 0),
+      'Defect Bak 1 (Bal)': Number(data['Defect Bak 1 (Bal)'] || data.bak1 || data.Bak1 || data['Bak 1'] || 0),
+      'Defect Bak 2 (Bal)': Number(data['Defect Bak 2 (Bal)'] || data.bak2 || data.Bak2 || data['Bak 2'] || 0),
+      'Es Tidak Terjual (Bal)': Number(data['Es Tidak Terjual (Bal)'] || data.tidakTerjual || data['Tidak Terjual'] || 0),
+      'Permintaan Es (Bal)': Number(data['Permintaan Es (Bal)'] || data.order || data.Order || 0),
+      'Waktu Operasi (Jam)': Number(data['Waktu Operasi (Jam)'] || data.totalBeban || data['Total Beban'] || 0),
+      'Waktu Aktual Produksi (Jam)': Number(data['Waktu Aktual Produksi (Jam)'] || data.normal || data.Normal || 0),
+      'Jam Beban Puncak (Jam)': Number(data['Jam Beban Puncak (Jam)'] || data.puncak || data.Puncak || 0),
+      'Produksi Ideal (Bal)': Number(data['Produksi Ideal (Bal)'] || data.kapasitas || data.Kapasitas || 0),
+      'Jumlah Mesin': Number(data['Jumlah Mesin'] || data.mesin || data.Mesin || 0),
+      'Produktivitas (Bal/Jam)': Number(data['Produktivitas (Bal/Jam)'] || data.prodJam || data['Prod Jam'] || 0),
+      'Jumlah Pekerja': Number(data['Jumlah Pekerja'] || data.tenagaKerja || data['Tenaga Kerja'] || 0),
+      'Output per Pekerja (Bal)': Number(data['Output per Pekerja (Bal)'] || data.outputTK || data['Output TK'] || 0),
+      'Realisasi Order (Bal)': Number(data['Realisasi Order (Bal)'] || data.realisasiOrder || data['Realisasi Order'] || 0),
+      'Selisih Order (Bal)': Number(data['Selisih Order (Bal)'] || data.selisihOrder || data['Selisih Order'] || 0),
+      'Persentase Penjualan (%)': Number(data['Persentase Penjualan (%)'] || data.persenPenjualan || data['Persen Penjualan'] || 0),
+      'Total Defect (Bal)': Number(data['Total Defect (Bal)'] || data.totalRusak || data['Total Rusak'] || 0),
     };
   };
 
@@ -115,8 +126,8 @@ app.post('/api/upload-csv', upload.single('csvFile'), (req, res) => {
       message: `Successfully imported ${data.length} records`,
       recordCount: data.length,
       dateRange: {
-        start: data[0]?.date,
-        end: data[data.length - 1]?.date
+        start: data[0]?.['Tanggal'] || data[0]?.date,
+        end: data[data.length - 1]?.['Tanggal'] || data[data.length - 1]?.date
       }
     });
   };

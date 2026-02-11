@@ -1,9 +1,16 @@
 node_modules
+client/node_modules
 .env
 *.log
 .DS_Store
 temp_data.txt
 uploads
 README.md
+REACT-SETUP.md
+DEPLOY.md
+DEPLOYMENT.md
 oee-template.csv
 oee-template.xlsx
+setup-react.sh
+views
+public
