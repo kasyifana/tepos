@@ -1,3 +1,5 @@
+import * as XLSX from 'xlsx';
+
 // Parse CSV file client-side with proper handling of quoted values
 export const parseCSV = (text) => {
   const lines = text.split('\n').filter(line => line.trim());
@@ -53,11 +55,54 @@ export const parseCSV = (text) => {
   return data;
 };
 
-// Parse Excel file client-side (simplified - requires xlsx library)
+// Parse Excel file client-side using xlsx library
 export const parseExcel = async (file) => {
-  // For now, we'll prompt user to convert Excel to CSV
-  // In production, you'd use a library like xlsx
-  throw new Error('Excel support coming soon. Please convert to CSV first.');
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Get first sheet
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert to JSON with header row
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          raw: false,  // Keep as strings first
+          defval: ''   // Default value for empty cells
+        });
+        
+        // Convert numeric strings to numbers
+        const processedData = jsonData.map(row => {
+          const processedRow = {};
+          Object.keys(row).forEach(key => {
+            const value = row[key];
+            // Try to convert to number if possible
+            if (value && !isNaN(value) && value.trim() !== '') {
+              processedRow[key] = parseFloat(value);
+            } else {
+              processedRow[key] = value;
+            }
+          });
+          return processedRow;
+        });
+        
+        console.log('Parsed Excel data:', processedData); // Debug
+        resolve(processedData);
+      } catch (error) {
+        reject(new Error('Failed to parse Excel file: ' + error.message));
+      }
+    };
+    
+    reader.onerror = () => {
+      reject(new Error('Failed to read Excel file'));
+    };
+    
+    reader.readAsArrayBuffer(file);
+  });
 };
 
 // Download data as CSV with proper escaping

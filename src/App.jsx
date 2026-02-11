@@ -5,7 +5,7 @@ import KPICard from './components/KPICard';
 import Timeline from './components/Timeline';
 import UploadModal from './components/UploadModal';
 import { loadData as loadStoredData, saveData, resetData as resetStoredData } from './data/oeeData.js';
-import { parseCSV, downloadTemplate } from './utils/fileUtils.js';
+import { parseCSV, parseExcel, downloadTemplate } from './utils/fileUtils.js';
 import './styles/App.css';
 
 function App() {
@@ -44,11 +44,21 @@ function App() {
 
   const handleFileUpload = async (file) => {
     try {
-      const text = await file.text();
-      const parsedData = parseCSV(text);
+      let parsedData;
       
-      if (parsedData.length === 0) {
-        throw new Error('No data found in CSV file');
+      // Check file type
+      const fileName = file.name.toLowerCase();
+      if (fileName.endsWith('.csv')) {
+        const text = await file.text();
+        parsedData = parseCSV(text);
+      } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        parsedData = await parseExcel(file);
+      } else {
+        throw new Error('Unsupported file type. Please upload CSV or Excel file.');
+      }
+      
+      if (!parsedData || parsedData.length === 0) {
+        throw new Error('No data found in file');
       }
 
       setData(parsedData);
