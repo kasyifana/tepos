@@ -2,17 +2,4 @@ node_modules
 .env
 *.log
 .DS_Store
-temp_data.txt
 README.md
-REACT-SETUP.md
-DEPLOY.md
-DEPLOYMENT.md
-oee-template.csv
-oee-template.xlsx
-setup-react.sh
-client
-server.js
-data
-api
-uploads
-views
