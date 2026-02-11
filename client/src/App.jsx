@@ -4,34 +4,71 @@ import MetricsCard from './components/MetricsCard';
 import KPICard from './components/KPICard';
 import Timeline from './components/Timeline';
 import UploadModal from './components/UploadModal';
-import { fetchData } from './services/api';
+import { loadData as loadStoredData, saveData, resetData as resetStoredData } from './data/oeeData';
+import { parseCSV, downloadTemplate } from './utils/fileUtils';
 import './styles/App.css';
 
 function App() {
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
-  const loadData = async () => {
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const storedData = loadStoredData();
+    setData(storedData);
+    setFilteredData(storedData);
+    setLoading(false);
+  }, []);
+
+  // Filter data by date range
+  useEffect(() => {
+    if (!dateRange.start && !dateRange.end) {
+      setFilteredData(data);
+      return;
+    }
+
+    const filtered = data.filter(row => {
+      const rowDate = row['Tanggal'];
+      if (!rowDate) return true;
+
+      if (dateRange.start && rowDate < dateRange.start) return false;
+      if (dateRange.end && rowDate > dateRange.end) return false;
+      return true;
+    });
+
+    setFilteredData(filtered);
+  }, [data, dateRange]);
+
+  const handleFileUpload = async (file) => {
     try {
-      setLoading(true);
-      const result = await fetchData(dateRange.start, dateRange.end);
-      setData(result);
+      const text = await file.text();
+      const parsedData = parseCSV(text);
+      
+      if (parsedData.length === 0) {
+        throw new Error('No data found in CSV file');
+      }
+
+      setData(parsedData);
+      saveData(parsedData);
+      setShowModal(false);
+      return { success: true, message: `Loaded ${parsedData.length} records` };
     } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error uploading file:', error);
+      return { success: false, message: error.message };
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [dateRange]);
-
-  const handleDataUpdate = () => {
-    loadData();
+  const handleReset = () => {
+    const defaultData = resetStoredData();
+    setData(defaultData);
     setShowModal(false);
+  };
+
+  const handleDownloadTemplate = () => {
+    downloadTemplate();
   };
 
   if (loading) {
@@ -46,16 +83,18 @@ function App() {
       />
       
       <div className="main-grid">
-        <MetricsCard data={data} />
-        <KPICard data={data} />
+        <MetricsCard data={filteredData} />
+        <KPICard data={filteredData} />
       </div>
 
-      <Timeline data={data} />
+      <Timeline data={filteredData} />
 
       {showModal && (
         <UploadModal 
           onClose={() => setShowModal(false)}
-          onSuccess={handleDataUpdate}
+          onUpload={handleFileUpload}
+          onReset={handleReset}
+          onDownloadTemplate={handleDownloadTemplate}
         />
       )}
     </div>

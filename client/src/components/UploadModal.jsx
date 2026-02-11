@@ -1,8 +1,7 @@
 import { useState, useRef } from 'react';
-import { uploadFile, resetData, downloadTemplate } from '../services/api';
 import './UploadModal.css';
 
-function UploadModal({ onClose, onSuccess }) {
+function UploadModal({ onClose, onUpload, onReset, onDownloadTemplate }) {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState({ type: '', message: '' });
   const [isDragging, setIsDragging] = useState(false);
@@ -42,10 +41,13 @@ function UploadModal({ onClose, onSuccess }) {
     }
 
     try {
-      setStatus({ type: 'info', message: 'Uploading...' });
-      await uploadFile(file);
-      setStatus({ type: 'success', message: 'File uploaded successfully!' });
-      setTimeout(() => onSuccess(), 1000);
+      setStatus({ type: 'info', message: 'Processing...' });
+      const result = await onUpload(file);
+      if (result.success) {
+        setStatus({ type: 'success', message: result.message });
+      } else {
+        setStatus({ type: 'error', message: result.message });
+      }
     } catch (error) {
       setStatus({ type: 'error', message: 'Upload failed: ' + error.message });
     }
@@ -56,9 +58,9 @@ function UploadModal({ onClose, onSuccess }) {
 
     try {
       setStatus({ type: 'info', message: 'Resetting...' });
-      await resetData();
+      onReset();
       setStatus({ type: 'success', message: 'Data reset successfully!' });
-      setTimeout(() => onSuccess(), 1000);
+      setTimeout(() => onClose(), 1000);
     } catch (error) {
       setStatus({ type: 'error', message: 'Reset failed: ' + error.message });
     }
@@ -106,7 +108,7 @@ function UploadModal({ onClose, onSuccess }) {
         
         <div className="modal-actions">
           <button className="btn-secondary" onClick={handleReset}>Reset ke Data Default</button>
-          <button className="btn-secondary" onClick={() => downloadTemplate('xlsx')}>📊 Download Excel Template</button>
+          <button className="btn-secondary" onClick={onDownloadTemplate}>📊 Download Template CSV</button>
           <button className="btn-primary" onClick={handleUpload} disabled={!file}>Upload File</button>
         </div>
       </div>
