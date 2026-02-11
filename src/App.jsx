@@ -4,8 +4,8 @@ import MetricsCard from './components/MetricsCard';
 import KPICard from './components/KPICard';
 import Timeline from './components/Timeline';
 import UploadModal from './components/UploadModal';
-import { loadData as loadStoredData, saveData, resetData as resetStoredData } from './data/oeeData';
-import { parseCSV, downloadTemplate } from './utils/fileUtils';
+import { loadData as loadStoredData, saveData, resetData as resetStoredData } from './data/oeeData.js';
+import { parseCSV, downloadTemplate } from './utils/fileUtils.js';
 import './styles/App.css';
 
 function App() {
